@@ -1,10 +1,11 @@
+require('dotenv').config();
+
 const mongoose = require('mongoose');
-const dbPassword = 'daBackstageCrew3185';
-const uri = `mongodb+srv://rali9924:${dbPassword}@merchandisedb.5sxcl.mongodb.net/?retryWrites=true&w=majority&appName=merchandiseDB`;
+
 
 const connectDB = async () => {
     try {
-        await mongoose.connect(uri, {
+        await mongoose.connect(process.env.MONGO_URI, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
         });
@@ -14,5 +15,7 @@ const connectDB = async () => {
         process.exit(1);
     }
 };
+
+console.log("Mongo URI:", process.env.MONGO_URI);
 
 module.exports = connectDB;
