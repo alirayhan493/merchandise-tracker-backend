@@ -126,26 +126,47 @@ app.post('/products', async (req, res) => {
 })
 
 app.delete('/products', async (req, res) => {
-    const {upc} = req.body;
+    const { upc } = req.body;
 
-    if(!upc) {
+    if (!upc) {
         return res.status(400).json({
             error: 'UPC is required'
-        })
+        });
     }
 
-    try{
-        const deletedProduct = await Product.deleteOne({upc});
-        if(deletedProduct.deletedCount === 0) {
-            return res.status(404).json({ error: 'Product not found'})
+    try {
+        // Find the product by UPC to get the image URL
+        const product = await Product.findOne({ upc });
+
+        if (!product) {
+            return res.status(404).json({ error: 'Product not found' });
         }
-        res.status(200).json({ message: 'Product deleted successfully'})
+
+        // Extract the public ID from the image URL
+        const imageUrl = product.imageUrl; // Ensure this is the correct field name
+        const publicId = imageUrl.split('/').slice(-2, -1).concat(imageUrl.split('/').pop().split('.')[0]).join('/'); // Adjust as needed
+
+        // Delete the product from the database
+        const deletedProduct = await Product.deleteOne({ upc });
+        if (deletedProduct.deletedCount === 0) {
+            return res.status(404).json({ error: 'Product not found' });
+        }
+
+        // Delete the image from Cloudinary
+        const result = await cloudinary.uploader.destroy(publicId);
+        if (result.result === 'ok') {
+            console.log('Image deleted successfully from Cloudinary');
+        } else {
+            console.error('Failed to delete image from Cloudinary:', result);
+        }
+
+        res.status(200).json({ message: 'Product deleted successfully' });
     } catch (error) {
-        console.error('Error deleting product: ', error);    
-        res.status(500).json({error: 'Failed to delete product'})
+        console.error('Error deleting product: ', error);
+        res.status(500).json({ error: 'Failed to delete product' });
     }
-}
-)
+});
+
 
 
 //add dmg
